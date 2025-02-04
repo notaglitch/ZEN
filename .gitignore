@@ -42,3 +42,16 @@ Thumbs.db
 *.log
 models/
 .ollama/
+
+# Node.js / Electron
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+frontend/dist/
+frontend/build/
+
+# Electron specific
+.electron-builder/
+out/

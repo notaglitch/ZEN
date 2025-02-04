@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const axios = require('axios')
 const FormData = require('form-data')
+const fs = require('fs')
+const os = require('os')
+const { v4: uuidv4 } = require('uuid')
 
 let mainWindow = null
 
@@ -12,10 +15,20 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(__dirname, 'preload.js'),
+            permissions: ['microphone']
         },
         backgroundColor: '#1a1a1a',
         show: false
+    })
+
+    mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+        const allowedPermissions = ['media', 'microphone']
+        if (allowedPermissions.includes(permission)) {
+            callback(true)
+        } else {
+            callback(false)
+        }
     })
 
     mainWindow.loadFile(path.join(__dirname, 'index.html'))
@@ -43,6 +56,7 @@ app.whenReady().then(async () => {
         
         createWindow()
 
+        // Handle text messages
         ipcMain.handle('send-message', async (event, message) => {
             try {
                 const response = await axios.post('http://localhost:5000/chat', {
@@ -55,19 +69,30 @@ app.whenReady().then(async () => {
             }
         })
 
-        ipcMain.handle('send-voice', async (event, audioBlob) => {
+        // Handle voice messages
+        ipcMain.handle('send-voice', async (event, audioData) => {
             try {
+                // Create a temporary file
+                const tempFile = path.join(os.tmpdir(), `${uuidv4()}.webm`)
+                fs.writeFileSync(tempFile, Buffer.from(audioData))
+
                 const formData = new FormData()
-                formData.append('audio', audioBlob, 'voice.wav')
-                
+                formData.append('audio', fs.createReadStream(tempFile))
+
                 const response = await axios.post('http://localhost:5000/voice-chat', 
                     formData,
                     {
                         headers: {
                             ...formData.getHeaders()
-                        }
+                        },
+                        maxContentLength: Infinity,
+                        maxBodyLength: Infinity
                     }
                 )
+
+                // Clean up temp file
+                fs.unlinkSync(tempFile)
+
                 return response.data
             } catch (error) {
                 console.error('Error sending voice:', error)

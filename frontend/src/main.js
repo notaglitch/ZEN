@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const axios = require('axios')
+const FormData = require('form-data')
 
 let mainWindow = null
 
@@ -51,6 +52,26 @@ app.whenReady().then(async () => {
             } catch (error) {
                 console.error('Error sending message:', error)
                 return { error: error.message || 'Failed to get response' }
+            }
+        })
+
+        ipcMain.handle('send-voice', async (event, audioBlob) => {
+            try {
+                const formData = new FormData()
+                formData.append('audio', audioBlob, 'voice.wav')
+                
+                const response = await axios.post('http://localhost:5000/voice-chat', 
+                    formData,
+                    {
+                        headers: {
+                            ...formData.getHeaders()
+                        }
+                    }
+                )
+                return response.data
+            } catch (error) {
+                console.error('Error sending voice:', error)
+                return { error: error.message || 'Failed to process voice' }
             }
         })
     } catch (error) {

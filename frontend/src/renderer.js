@@ -2,24 +2,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const messagesContainer = document.getElementById('chat-messages')
     const userInput = document.getElementById('user-input')
     const sendButton = document.getElementById('send-button')
+    const voiceButton = document.getElementById('voice-button')
+    const voiceModal = document.getElementById('voice-modal')
+    const recordButton = document.getElementById('record-button')
+    const closeButton = document.querySelector('.close-button')
+    const voiceStatus = document.querySelector('.voice-status')
+    
+    let mediaRecorder = null
+    let audioChunks = []
+    let isRecording = false
 
     function createAudioPlayer(messageId) {
         const audio = document.createElement('audio')
         audio.controls = true
         audio.src = `http://localhost:5000/audio/${messageId}`
         
-        // Add error handling for audio
         audio.onerror = (e) => {
             console.error('Audio error:', e)
             console.error('Audio src:', audio.src)
         }
 
-        // Add loading event
         audio.onloadstart = () => {
             console.log('Audio started loading:', messageId)
         }
 
-        // Add ready event
         audio.oncanplaythrough = () => {
             console.log('Audio ready to play:', messageId)
             audio.play().catch(error => {
@@ -34,14 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageDiv = document.createElement('div')
         messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`
         
-        // Add text content
         const textDiv = document.createElement('div')
         textDiv.textContent = content
         messageDiv.appendChild(textDiv)
         
-        // Add audio player if available
         if (messageId && hasAudio && !isUser) {
-            console.log('Creating audio player for message:', messageId)
             const audioPlayer = createAudioPlayer(messageId)
             messageDiv.appendChild(audioPlayer)
         }
@@ -49,6 +52,84 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesContainer.appendChild(messageDiv)
         messagesContainer.scrollTop = messagesContainer.scrollHeight
     }
+
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            mediaRecorder = new MediaRecorder(stream)
+            audioChunks = []
+
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data)
+            }
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
+                voiceStatus.textContent = 'Processing...'
+                
+                try {
+                    const response = await window.electronAPI.sendVoice(audioBlob)
+                    if (response.error) {
+                        addMessage(`Error: ${response.error}`)
+                    } else {
+                        addMessage(response.transcribed, true)
+                        addMessage(response.response, false, response.message_id, response.has_audio)
+                    }
+                } catch (error) {
+                    addMessage('Error: Failed to process voice message')
+                }
+                
+                closeVoiceModal()
+            }
+
+            mediaRecorder.start()
+            isRecording = true
+            recordButton.classList.add('recording')
+            voiceStatus.textContent = 'Recording... Click to stop'
+            
+        } catch (error) {
+            console.error('Error starting recording:', error)
+            voiceStatus.textContent = 'Error accessing microphone'
+        }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop()
+            isRecording = false
+            recordButton.classList.remove('recording')
+            mediaRecorder.stream.getTracks().forEach(track => track.stop())
+        }
+    }
+
+    function openVoiceModal() {
+        voiceModal.style.display = 'block'
+        voiceStatus.textContent = 'Click to start speaking'
+    }
+
+    function closeVoiceModal() {
+        voiceModal.style.display = 'none'
+        if (isRecording) {
+            stopRecording()
+        }
+    }
+
+    voiceButton.addEventListener('click', openVoiceModal)
+    closeButton.addEventListener('click', closeVoiceModal)
+    
+    recordButton.addEventListener('click', () => {
+        if (!isRecording) {
+            startRecording()
+        } else {
+            stopRecording()
+        }
+    })
+    
+    window.addEventListener('click', (event) => {
+        if (event.target === voiceModal) {
+            closeVoiceModal()
+        }
+    })
 
     async function handleSendMessage() {
         const message = userInput.value.trim()
@@ -62,20 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
             userInput.value = ''
 
             const response = await window.electronAPI.sendMessage(message)
-            console.log('Got response:', response)  // Debug log
-            
             if (response.error) {
                 addMessage(`Error: ${response.error}`)
             } else {
-                addMessage(
-                    response.response, 
-                    false, 
-                    response.message_id,
-                    response.has_audio
-                )
+                addMessage(response.response, false)
             }
         } catch (error) {
-            console.error('Send message error:', error)  // Debug log
+            console.error('Send message error:', error)
             addMessage('Error: Failed to send message')
         } finally {
             userInput.disabled = false

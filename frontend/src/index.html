@@ -3,6 +3,8 @@
 <head>
     <title>ZEN Chat</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Add Font Awesome for the microphone icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
@@ -15,9 +17,29 @@
                     rows="3"
                 ></textarea>
                 <button id="send-button">Send</button>
+                <button id="voice-button" class="voice-button">
+                    <i class="fas fa-microphone"></i>
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- Voice Input Modal -->
+    <div id="voice-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Voice Input</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="voice-status">Click to start speaking</div>
+                <button id="record-button" class="record-button">
+                    <i class="fas fa-microphone"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="renderer.js"></script>
 </body>
 </html> 

@@ -27,7 +27,7 @@ def chat():
 
         logger.info(f"Received message: {prompt}")
         
-        response = ollama.chat(model="llama2:3.2", messages=[{
+        response = ollama.chat(model="llama3.2", messages=[{
             "role": "user",
             "content": prompt
         }])

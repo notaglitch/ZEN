@@ -8,6 +8,7 @@ import tempfile
 import os
 import uuid
 import time
+import whisper
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,6 +19,14 @@ CORS(app)
 TEMP_AUDIO_DIR = 'temp_audio'
 if not os.path.exists(TEMP_AUDIO_DIR):
     os.makedirs(TEMP_AUDIO_DIR)
+
+# Load Whisper model
+try:
+    whisper_model = whisper.load_model("base")
+    logger.info("Whisper model loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to load Whisper model: {e}")
+    whisper_model = None
 
 def text_to_speech(text, message_id):
     try:
@@ -52,18 +61,13 @@ def chat():
         }])
         
         response_text = response['message']['content']
-        logger.info(f"Got response from Ollama: {response_text[:100]}...")  # Log first 100 chars
+        logger.info(f"Got response from Ollama: {response_text[:100]}...")
 
-        message_id = str(uuid.uuid4())
-        logger.info(f"Generated message ID: {message_id}")
-        
-        audio_path = text_to_speech(response_text, message_id)
-        logger.info(f"Generated audio at: {audio_path}")
-        
+        # For text chat, we don't generate audio
         return jsonify({
             "response": response_text,
-            "has_audio": audio_path is not None,
-            "message_id": message_id
+            "has_audio": False,
+            "message_id": None
         })
     
     except Exception as e:
@@ -84,6 +88,50 @@ def get_audio(message_id):
             return jsonify({"error": "Audio not found"}), 404
     except Exception as e:
         logger.error(f"Error serving audio: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/voice-chat', methods=['POST'])
+def voice_chat():
+    try:
+        if 'audio' not in request.files:
+            return jsonify({"error": "No audio file provided"}), 400
+
+        audio_file = request.files['audio']
+        
+        # Save the uploaded audio file temporarily
+        temp_path = os.path.join(TEMP_AUDIO_DIR, f"input_{uuid.uuid4()}.wav")
+        audio_file.save(temp_path)
+        
+        # Transcribe audio using Whisper
+        logger.info("Transcribing audio with Whisper...")
+        result = whisper_model.transcribe(temp_path)
+        transcribed_text = result["text"]
+        logger.info(f"Transcribed text: {transcribed_text}")
+        
+        # Delete temporary input file
+        os.remove(temp_path)
+        
+        # Get response from Ollama
+        response = ollama.chat(model="llama3.2", messages=[{
+            "role": "user",
+            "content": transcribed_text
+        }])
+        
+        response_text = response['message']['content']
+        
+        # Generate audio response
+        message_id = str(uuid.uuid4())
+        audio_path = text_to_speech(response_text, message_id)
+        
+        return jsonify({
+            "transcribed": transcribed_text,
+            "response": response_text,
+            "has_audio": audio_path is not None,
+            "message_id": message_id
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in voice chat endpoint: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 def cleanup_old_files():

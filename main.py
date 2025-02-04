@@ -20,7 +20,6 @@ TEMP_AUDIO_DIR = 'temp_audio'
 if not os.path.exists(TEMP_AUDIO_DIR):
     os.makedirs(TEMP_AUDIO_DIR)
 
-# Load Whisper model
 try:
     whisper_model = whisper.load_model("base")
     logger.info("Whisper model loaded successfully")
@@ -63,7 +62,6 @@ def chat():
         response_text = response['message']['content']
         logger.info(f"Got response from Ollama: {response_text[:100]}...")
 
-        # For text chat, we don't generate audio
         return jsonify({
             "response": response_text,
             "has_audio": False,
@@ -94,24 +92,23 @@ def get_audio(message_id):
 def voice_chat():
     try:
         if 'audio' not in request.files:
+            logger.error("No audio file in request")
             return jsonify({"error": "No audio file provided"}), 400
 
         audio_file = request.files['audio']
+        logger.info(f"Received audio file: {audio_file.filename}")
         
-        # Save the uploaded audio file temporarily
-        temp_path = os.path.join(TEMP_AUDIO_DIR, f"input_{uuid.uuid4()}.wav")
+        temp_path = os.path.join(TEMP_AUDIO_DIR, f"input_{uuid.uuid4()}.webm")
         audio_file.save(temp_path)
+        logger.info(f"Saved audio file to {temp_path}")
         
-        # Transcribe audio using Whisper
         logger.info("Transcribing audio with Whisper...")
         result = whisper_model.transcribe(temp_path)
         transcribed_text = result["text"]
         logger.info(f"Transcribed text: {transcribed_text}")
         
-        # Delete temporary input file
         os.remove(temp_path)
         
-        # Get response from Ollama
         response = ollama.chat(model="llama3.2", messages=[{
             "role": "user",
             "content": transcribed_text
@@ -119,7 +116,6 @@ def voice_chat():
         
         response_text = response['message']['content']
         
-        # Generate audio response
         message_id = str(uuid.uuid4())
         audio_path = text_to_speech(response_text, message_id)
         

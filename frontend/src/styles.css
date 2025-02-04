@@ -86,4 +86,14 @@ body {
 #send-button:disabled {
     background-color: #666;
     cursor: not-allowed;
+}
+
+.message audio {
+    margin-top: 10px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.assistant-message audio {
+    display: block;
 } 

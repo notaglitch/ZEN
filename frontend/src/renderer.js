@@ -3,10 +3,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('user-input')
     const sendButton = document.getElementById('send-button')
 
-    function addMessage(content, isUser = false) {
+    function createAudioPlayer(messageId) {
+        const audio = document.createElement('audio')
+        audio.controls = true
+        audio.src = `http://localhost:5000/audio/${messageId}`
+        return audio
+    }
+
+    function addMessage(content, isUser = false, messageId = null) {
         const messageDiv = document.createElement('div')
         messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`
-        messageDiv.textContent = content
+        
+        const textDiv = document.createElement('div')
+        textDiv.textContent = content
+        messageDiv.appendChild(textDiv)
+        
+        if (messageId && !isUser) {
+            const audioPlayer = createAudioPlayer(messageId)
+            messageDiv.appendChild(audioPlayer)
+        }
+        
         messagesContainer.appendChild(messageDiv)
         messagesContainer.scrollTop = messagesContainer.scrollHeight
     }
@@ -15,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = userInput.value.trim()
         if (!message) return
 
-        // Disable input while processing
         userInput.disabled = true
         sendButton.disabled = true
 
@@ -27,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.error) {
                 addMessage(`Error: ${response.error}`)
             } else {
-                addMessage(response.response)
+                addMessage(response.response, false, response.message_id)
             }
         } catch (error) {
             addMessage('Error: Failed to send message')
@@ -45,4 +60,4 @@ document.addEventListener('DOMContentLoaded', () => {
             handleSendMessage()
         }
     })
-}) 
+})

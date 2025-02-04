@@ -52,10 +52,13 @@ def chat():
         }])
         
         response_text = response['message']['content']
-        logger.info(f"Got response from Ollama")
+        logger.info(f"Got response from Ollama: {response_text[:100]}...")  # Log first 100 chars
 
         message_id = str(uuid.uuid4())
+        logger.info(f"Generated message ID: {message_id}")
+        
         audio_path = text_to_speech(response_text, message_id)
+        logger.info(f"Generated audio at: {audio_path}")
         
         return jsonify({
             "response": response_text,
@@ -71,13 +74,17 @@ def chat():
 def get_audio(message_id):
     try:
         audio_path = os.path.join(TEMP_AUDIO_DIR, f"{message_id}.mp3")
+        logger.info(f"Requested audio file: {audio_path}")
+        
         if os.path.exists(audio_path):
+            logger.info(f"Serving audio file: {audio_path}")
             return send_file(audio_path, mimetype='audio/mp3')
         else:
+            logger.error(f"Audio file not found: {audio_path}")
             return jsonify({"error": "Audio not found"}), 404
     except Exception as e:
-        logger.error(f"Error serving audio: {e}")
-        return jsonify({"error": "Audio not found"}), 404
+        logger.error(f"Error serving audio: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 def cleanup_old_files():
     try:

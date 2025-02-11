@@ -14,8 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let silenceTimeout = null
     let audioContext = null
     let silenceStart = null
-    const SILENCE_THRESHOLD = -50  // dB
-    const SILENCE_DURATION = 1500  // ms
+    const SILENCE_THRESHOLD = -50
+    const SILENCE_DURATION = 1500
     let isProcessing = false
     let visualizer = null
     const VOICE_ACTIVATION_THRESHOLD = -45
@@ -26,18 +26,44 @@ document.addEventListener('DOMContentLoaded', () => {
         const audio = document.createElement('audio')
         audio.controls = true
         audio.src = `http://localhost:5000/audio/${messageId}`
+        
+        audio.playbackRate = 1.2
+        
         audio.oncanplaythrough = () => {
             audio.play().catch(error => {
                 console.error('Auto-play failed:', error)
             })
         }
-        // When audio finishes playing, start listening again
+        
+        const speedControl = document.createElement('div')
+        speedControl.className = 'speed-control'
+        
+        const speedButton = document.createElement('button')
+        speedButton.className = 'speed-button'
+        speedButton.innerHTML = `${audio.playbackRate}x`
+        
+        const speeds = [1.0, 1.2, 1.5, 1.7, 2.0]
+        speedButton.onclick = () => {
+            const currentIndex = speeds.indexOf(audio.playbackRate)
+            const nextIndex = (currentIndex + 1) % speeds.length
+            audio.playbackRate = speeds[nextIndex]
+            speedButton.innerHTML = `${speeds[nextIndex]}x`
+        }
+        
+        speedControl.appendChild(speedButton)
+        
+        const wrapper = document.createElement('div')
+        wrapper.className = 'audio-wrapper'
+        wrapper.appendChild(audio)
+        wrapper.appendChild(speedControl)
+        
         audio.onended = () => {
             if (voiceModal.style.display === 'block') {
                 startRecording()
             }
         }
-        return audio
+        
+        return wrapper
     }
 
     function addMessage(content, isUser = false, messageId = null, hasAudio = false) {
@@ -62,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
             audioContext = new AudioContext()
         }
 
-        // Clean up any existing visualizer
         const existingCanvas = document.querySelector('.audio-visualizer')
         if (existingCanvas) {
             existingCanvas.remove()
@@ -278,7 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.voice-indicator').classList.remove('active')
             mediaRecorder.stream.getTracks().forEach(track => track.stop())
             
-            // Clean up visualizer
             const existingCanvas = document.querySelector('.audio-visualizer')
             if (existingCanvas) {
                 existingCanvas.remove()
@@ -301,14 +325,12 @@ document.addEventListener('DOMContentLoaded', () => {
             audioContext.close()
             audioContext = null
         }
-        // Clean up visualizer
         const existingCanvas = document.querySelector('.audio-visualizer')
         if (existingCanvas) {
             existingCanvas.remove()
         }
     }
 
-    // Event Listeners
     voiceButton.addEventListener('click', openVoiceModal)
     closeButton.addEventListener('click', closeVoiceModal)
     
@@ -320,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
 
-    // Close modal if clicking outside
     window.addEventListener('click', (event) => {
         if (event.target === voiceModal) {
             closeVoiceModal()

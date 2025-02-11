@@ -461,4 +461,57 @@ audio::-webkit-media-controls-time-remaining-display {
     .record-button i {
         font-size: 32px;
     }
+}
+
+.audio-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.speed-control {
+    display: flex;
+    align-items: center;
+}
+
+.speed-button {
+    background-color: #3d3d3d;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.speed-button:hover {
+    background-color: #4a9eff;
+}
+
+/* Update existing audio styles */
+.message audio {
+    flex: 1;
+    margin: 0;
+    width: auto;
+}
+
+/* Custom audio player colors */
+audio::-webkit-media-controls-panel {
+    background-color: #3d3d3d;
+}
+
+audio::-webkit-media-controls-play-button,
+audio::-webkit-media-controls-timeline,
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display,
+audio::-webkit-media-controls-timeline {
+    color: #fff;
+}
+
+audio::-webkit-media-controls-play-button:hover {
+    background-color: #4a9eff;
 } 

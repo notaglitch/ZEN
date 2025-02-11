@@ -62,6 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
             audioContext = new AudioContext()
         }
 
+        // Clean up any existing visualizer
+        const existingCanvas = document.querySelector('.audio-visualizer')
+        if (existingCanvas) {
+            existingCanvas.remove()
+        }
+
         const analyser = audioContext.createAnalyser()
         const microphone = audioContext.createMediaStreamSource(stream)
         analyser.fftSize = 256
@@ -69,15 +75,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const canvas = document.createElement('canvas')
         canvas.className = 'audio-visualizer'
-        document.querySelector('.modal-body').insertBefore(canvas, recordButton)
+        const modalBody = document.querySelector('.modal-body')
+        const recordButton = document.getElementById('record-button')
+        modalBody.insertBefore(canvas, recordButton)
 
         const canvasCtx = canvas.getContext('2d')
         const dataArray = new Uint8Array(analyser.frequencyBinCount)
 
         function draw() {
-            if (!isRecording) return
+            if (!isRecording) {
+                cancelAnimationFrame(canvas.animationFrame)
+                return
+            }
 
-            requestAnimationFrame(draw)
+            canvas.animationFrame = requestAnimationFrame(draw)
             analyser.getByteFrequencyData(dataArray)
 
             canvasCtx.fillStyle = '#2d2d2d'
@@ -87,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let barHeight
             let x = 0
 
-            for (let i = 0; i < dataArray.length; i++) {
+            for(let i = 0; i < dataArray.length; i++) {
                 barHeight = dataArray[i] / 2
                 
                 const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.height)
@@ -266,6 +277,12 @@ document.addEventListener('DOMContentLoaded', () => {
             updateVoiceFeedback('processing', 'Processing your message...')
             document.querySelector('.voice-indicator').classList.remove('active')
             mediaRecorder.stream.getTracks().forEach(track => track.stop())
+            
+            // Clean up visualizer
+            const existingCanvas = document.querySelector('.audio-visualizer')
+            if (existingCanvas) {
+                existingCanvas.remove()
+            }
         }
     }
 
@@ -283,6 +300,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audioContext) {
             audioContext.close()
             audioContext = null
+        }
+        // Clean up visualizer
+        const existingCanvas = document.querySelector('.audio-visualizer')
+        if (existingCanvas) {
+            existingCanvas.remove()
         }
     }
 

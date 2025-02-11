@@ -9,16 +9,22 @@
 <body>
     <div class="container">
         <div class="chat-container">
+            <div class="chat-header">
+                <h1>ZEN Chat</h1>
+                <button id="voice-button" class="voice-button" title="Start voice chat">
+                    <i class="fas fa-microphone"></i>
+                </button>
+            </div>
             <div id="chat-messages"></div>
             <div class="input-container">
                 <textarea 
                     id="user-input" 
                     placeholder="Type your message..."
-                    rows="3"
+                    rows="1"
+                    autoresize
                 ></textarea>
-                <button id="send-button">Send</button>
-                <button id="voice-button" class="voice-button">
-                    <i class="fas fa-microphone"></i>
+                <button id="send-button">
+                    <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
         </div>
@@ -28,14 +34,28 @@
     <div id="voice-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Voice Input</h2>
-                <button class="close-button">&times;</button>
+                <div class="modal-title">
+                    <i class="fas fa-microphone"></i>
+                    <h2>Voice Chat</h2>
+                </div>
+                <button class="close-button">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <div class="modal-body">
-                <div class="voice-status">Click to start speaking</div>
+                <div class="voice-status">Click the button to start speaking</div>
                 <button id="record-button" class="record-button">
                     <i class="fas fa-microphone"></i>
+                    <div class="ripple"></div>
                 </button>
+                <div class="voice-tips">
+                    <p>Tips:</p>
+                    <ul>
+                        <li>Speak clearly and naturally</li>
+                        <li>Pause for 1.5s to process</li>
+                        <li>Click button to stop manually</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

@@ -331,4 +331,162 @@ audio::-webkit-media-controls-time-remaining-display {
     flex-direction: column;
     align-items: center;
     gap: 20px;
+}
+
+/* Add these new styles for the voice feature */
+.voice-status-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.voice-indicator {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 30px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.voice-indicator.active {
+    opacity: 1;
+}
+
+.wave {
+    width: 3px;
+    height: 100%;
+    background-color: #4a9eff;
+    border-radius: 3px;
+    animation: wave 1s ease-in-out infinite;
+    transform-origin: bottom;
+}
+
+.wave:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.wave:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes wave {
+    0%, 100% { transform: scaleY(0.2); }
+    50% { transform: scaleY(1); }
+}
+
+.record-button {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #4a9eff, #3a8eef);
+    box-shadow: 0 8px 16px rgba(74, 158, 255, 0.2);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 30px 0;
+}
+
+.record-button i {
+    font-size: 40px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.record-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px rgba(74, 158, 255, 0.3);
+}
+
+.record-button.recording {
+    background: linear-gradient(145deg, #ff4a4a, #ff3a3a);
+    animation: pulse 1.5s infinite;
+}
+
+.record-button.recording i {
+    animation: blink 1.5s infinite;
+}
+
+.voice-feedback {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background-color: #252525;
+    border-radius: 10px;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.voice-feedback.success {
+    background-color: rgba(46, 213, 115, 0.15);
+    border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.voice-feedback.error {
+    background-color: rgba(255, 71, 87, 0.15);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
+.voice-feedback.processing {
+    background-color: rgba(74, 158, 255, 0.15);
+    border: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+.feedback-icon i {
+    font-size: 18px;
+    color: #4a9eff;
+}
+
+.feedback-text {
+    font-size: 14px;
+    color: #999;
+}
+
+.modal-content {
+    background: linear-gradient(180deg, #2d2d2d, #252525);
+    border: 1px solid #3d3d3d;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 74, 74, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 74, 74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 74, 74, 0); }
+}
+
+/* Update existing modal styles */
+.modal {
+    backdrop-filter: blur(8px);
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    margin: 10% auto;
+    max-width: 450px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-content {
+        margin: 5% auto;
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .record-button {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .record-button i {
+        font-size: 32px;
+    }
 } 

@@ -43,18 +43,23 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="voice-status">Click the button to start speaking</div>
+                <div class="voice-status-container">
+                    <div class="voice-status">Click to start speaking</div>
+                    <div class="voice-indicator">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                    </div>
+                </div>
                 <button id="record-button" class="record-button">
                     <i class="fas fa-microphone"></i>
                     <div class="ripple"></div>
                 </button>
-                <div class="voice-tips">
-                    <p>Tips:</p>
-                    <ul>
-                        <li>Speak clearly and naturally</li>
-                        <li>Pause for 1.5s to process</li>
-                        <li>Click button to stop manually</li>
-                    </ul>
+                <div class="voice-feedback">
+                    <div class="feedback-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="feedback-text">Waiting to start...</div>
                 </div>
             </div>
         </div>

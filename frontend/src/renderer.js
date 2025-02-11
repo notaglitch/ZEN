@@ -143,11 +143,44 @@ document.addEventListener('DOMContentLoaded', () => {
         return scriptProcessor
     }
 
+    function updateVoiceFeedback(state, message) {
+        const feedback = document.querySelector('.voice-feedback')
+        const feedbackText = document.querySelector('.feedback-text')
+        const feedbackIcon = document.querySelector('.feedback-icon i')
+        const voiceIndicator = document.querySelector('.voice-indicator')
+        
+        feedback.className = 'voice-feedback'
+        feedback.classList.add(state)
+        feedbackText.textContent = message
+        
+        switch(state) {
+            case 'success':
+                feedbackIcon.className = 'fas fa-check-circle'
+                feedbackIcon.style.color = '#2ed573'
+                voiceIndicator.classList.remove('active')
+                break
+            case 'error':
+                feedbackIcon.className = 'fas fa-exclamation-circle'
+                feedbackIcon.style.color = '#ff4757'
+                voiceIndicator.classList.remove('active')
+                break
+            case 'processing':
+                feedbackIcon.className = 'fas fa-circle-notch fa-spin'
+                feedbackIcon.style.color = '#4a9eff'
+                voiceIndicator.classList.remove('active')
+                break
+            default:
+                feedbackIcon.className = 'fas fa-info-circle'
+                feedbackIcon.style.color = '#4a9eff'
+                break
+        }
+    }
+
     async function startRecording() {
         if (isProcessing) return
 
         try {
-            console.log('Requesting microphone access...')
+            updateVoiceFeedback('processing', 'Accessing microphone...')
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     echoCancellation: true,
@@ -156,6 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             })
 
+            document.querySelector('.voice-indicator').classList.add('active')
+            updateVoiceFeedback('success', 'Listening...')
+            
             mediaRecorder = new MediaRecorder(stream, {
                 mimeType: 'audio/webm;codecs=opus'
             })
@@ -172,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 isProcessing = true
-                voiceStatus.textContent = 'Processing...'
+                updateVoiceFeedback('processing', 'Processing your message...')
                 
                 try {
                     const audioBlob = new Blob(audioChunks, { 
@@ -185,21 +221,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     const response = await window.electronAPI.sendVoice(Array.from(uint8Array))
                     
                     if (response.error) {
-                        console.error('Server error:', response.error)
-                        voiceStatus.textContent = 'Error occurred. Click to try again.'
+                        updateVoiceFeedback('error', 'Error occurred. Click to try again.')
                     } else {
-                        if (response.transcribed) {
-                            addMessage(response.transcribed, true)
-                        }
+                        updateVoiceFeedback('success', 'Message sent successfully!')
+                        setTimeout(() => {
+                            if (voiceModal.style.display === 'block') {
+                                updateVoiceFeedback('default', 'Ready to listen...')
+                            }
+                        }, 2000)
+                        addMessage(response.transcribed, true)
                         addMessage(response.response, false, response.message_id, response.has_audio)
                     }
                 } catch (error) {
-                    console.error('Processing error:', error)
-                    voiceStatus.textContent = 'Error occurred. Click to try again.'
+                    updateVoiceFeedback('error', 'Failed to process message')
                 } finally {
                     isProcessing = false
                     if (voiceModal.style.display === 'block' && response?.should_restart) {
-                        setTimeout(startRecording, 100)
+                        setTimeout(startRecording, 2000)
                     }
                 }
             }
@@ -215,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             console.error('Microphone access error:', error)
-            voiceStatus.textContent = `Error: ${error.message || 'Could not access microphone'}`
+            updateVoiceFeedback('error', 'Could not access microphone')
         }
     }
 
@@ -225,7 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
             mediaRecorder.stop()
             isRecording = false
             recordButton.classList.remove('recording')
-            voiceStatus.textContent = 'Processing...'
+            updateVoiceFeedback('processing', 'Processing your message...')
+            document.querySelector('.voice-indicator').classList.remove('active')
             mediaRecorder.stream.getTracks().forEach(track => track.stop())
         }
     }

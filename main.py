@@ -9,6 +9,8 @@ import os
 import uuid
 import time
 import whisper
+from queue import Queue
+import threading
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,6 +28,9 @@ try:
 except Exception as e:
     logger.error(f"Failed to load Whisper model: {e}")
     whisper_model = None
+
+conversation_history = []
+MAX_HISTORY = 10
 
 def text_to_speech(text, message_id):
     try:
@@ -100,21 +105,40 @@ def voice_chat():
         
         temp_path = os.path.join(TEMP_AUDIO_DIR, f"input_{uuid.uuid4()}.webm")
         audio_file.save(temp_path)
-        logger.info(f"Saved audio file to {temp_path}")
         
         logger.info("Transcribing audio with Whisper...")
         result = whisper_model.transcribe(temp_path)
-        transcribed_text = result["text"]
+        transcribed_text = result["text"].strip()
         logger.info(f"Transcribed text: {transcribed_text}")
         
         os.remove(temp_path)
         
-        response = ollama.chat(model="llama3.2", messages=[{
-            "role": "user",
-            "content": transcribed_text
-        }])
+        if len(transcribed_text) < 2:
+            return jsonify({
+                "transcribed": transcribed_text,
+                "response": "I didn't catch that. Could you please speak again?",
+                "has_audio": False,
+                "message_id": None,
+                "should_restart": True
+            })
+
+        messages = []
+        for hist in conversation_history[-3:]:
+            messages.extend([
+                {"role": "user", "content": hist["user"]},
+                {"role": "assistant", "content": hist["assistant"]}
+            ])
+        messages.append({"role": "user", "content": transcribed_text})
         
+        response = ollama.chat(model="llama3.2", messages=messages)
         response_text = response['message']['content']
+        
+        conversation_history.append({
+            "user": transcribed_text,
+            "assistant": response_text
+        })
+        if len(conversation_history) > MAX_HISTORY:
+            conversation_history.pop(0)
         
         message_id = str(uuid.uuid4())
         audio_path = text_to_speech(response_text, message_id)
@@ -123,12 +147,16 @@ def voice_chat():
             "transcribed": transcribed_text,
             "response": response_text,
             "has_audio": audio_path is not None,
-            "message_id": message_id
+            "message_id": message_id,
+            "should_restart": True
         })
         
     except Exception as e:
         logger.error(f"Error in voice chat endpoint: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "error": str(e),
+            "should_restart": True
+        }), 500
 
 def cleanup_old_files():
     try:

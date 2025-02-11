@@ -52,7 +52,7 @@ def text_to_speech(text, message_id):
                 return new_path
 
         audio_path = os.path.join(TEMP_AUDIO_DIR, f"{message_id}.mp3")
-        tts = gTTS(text=text, lang='en')
+        tts = gTTS(text=text, lang='en', tld='co.uk', slow=False)
         tts.save(audio_path)
 
         if len(tts_cache) >= MAX_CACHE_SIZE:
